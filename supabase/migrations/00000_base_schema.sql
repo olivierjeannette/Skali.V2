@@ -38,7 +38,7 @@ EXCEPTION
 END $$;
 
 -- =====================================================
--- 3. CORE TABLES
+-- 3. CORE TABLES (ORDRE: pas de dépendances circulaires)
 -- =====================================================
 
 -- -----------------------------------------------------
@@ -59,7 +59,7 @@ CREATE INDEX IF NOT EXISTS idx_profiles_email ON public.profiles(email);
 -- RLS
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 
--- Policies
+-- Policies profiles (pas de dépendances)
 DROP POLICY IF EXISTS "Users can view own profile" ON public.profiles;
 CREATE POLICY "Users can view own profile" ON public.profiles
     FOR SELECT USING (auth.uid() = id);
@@ -109,62 +109,12 @@ CREATE TABLE IF NOT EXISTS public.organizations (
 -- Index
 CREATE INDEX IF NOT EXISTS idx_organizations_slug ON public.organizations(slug);
 
--- RLS
+-- RLS (policies ajoutées après organization_users)
 ALTER TABLE public.organizations ENABLE ROW LEVEL SECURITY;
-
--- Function to check if user is staff of org
-CREATE OR REPLACE FUNCTION public.is_org_staff(org_id UUID)
-RETURNS BOOLEAN
-LANGUAGE plpgsql
-SECURITY DEFINER
-AS $$
-BEGIN
-    RETURN EXISTS (
-        SELECT 1 FROM public.organization_users
-        WHERE organization_users.org_id = is_org_staff.org_id
-        AND organization_users.user_id = auth.uid()
-        AND organization_users.is_active = true
-    );
-END;
-$$;
-
--- Function to get user's org IDs
-CREATE OR REPLACE FUNCTION public.get_user_org_ids()
-RETURNS UUID[]
-LANGUAGE plpgsql
-SECURITY DEFINER
-AS $$
-BEGIN
-    RETURN ARRAY(
-        SELECT org_id FROM public.organization_users
-        WHERE user_id = auth.uid() AND is_active = true
-    );
-END;
-$$;
-
--- Policies
-DROP POLICY IF EXISTS "Staff can view their org" ON public.organizations;
-CREATE POLICY "Staff can view their org" ON public.organizations
-    FOR SELECT USING (is_org_staff(id));
-
-DROP POLICY IF EXISTS "Owners can update their org" ON public.organizations;
-CREATE POLICY "Owners can update their org" ON public.organizations
-    FOR UPDATE USING (
-        EXISTS (
-            SELECT 1 FROM public.organization_users
-            WHERE organization_users.org_id = organizations.id
-            AND organization_users.user_id = auth.uid()
-            AND organization_users.role = 'owner'
-            AND organization_users.is_active = true
-        )
-    );
-
-DROP POLICY IF EXISTS "Anyone can insert org" ON public.organizations;
-CREATE POLICY "Anyone can insert org" ON public.organizations
-    FOR INSERT WITH CHECK (true);
 
 -- -----------------------------------------------------
 -- organization_users (Lien users <-> orgs)
+-- DOIT ÊTRE CRÉÉE AVANT les fonctions qui l'utilisent
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS public.organization_users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -184,27 +134,6 @@ CREATE INDEX IF NOT EXISTS idx_organization_users_user ON public.organization_us
 
 -- RLS
 ALTER TABLE public.organization_users ENABLE ROW LEVEL SECURITY;
-
--- Policies
-DROP POLICY IF EXISTS "Staff can view their org members" ON public.organization_users;
-CREATE POLICY "Staff can view their org members" ON public.organization_users
-    FOR SELECT USING (is_org_staff(org_id));
-
-DROP POLICY IF EXISTS "Admins can manage org members" ON public.organization_users;
-CREATE POLICY "Admins can manage org members" ON public.organization_users
-    FOR ALL USING (
-        EXISTS (
-            SELECT 1 FROM public.organization_users ou
-            WHERE ou.org_id = organization_users.org_id
-            AND ou.user_id = auth.uid()
-            AND ou.role IN ('owner', 'admin')
-            AND ou.is_active = true
-        )
-    );
-
-DROP POLICY IF EXISTS "Users can insert own org_user" ON public.organization_users;
-CREATE POLICY "Users can insert own org_user" ON public.organization_users
-    FOR INSERT WITH CHECK (user_id = auth.uid());
 
 -- -----------------------------------------------------
 -- members (Membres des salles)
@@ -247,7 +176,87 @@ CREATE INDEX IF NOT EXISTS idx_members_name ON public.members(last_name, first_n
 -- RLS
 ALTER TABLE public.members ENABLE ROW LEVEL SECURITY;
 
--- Policies
+-- =====================================================
+-- 4. HELPER FUNCTIONS (après toutes les tables)
+-- =====================================================
+
+-- Function to check if user is staff of org
+CREATE OR REPLACE FUNCTION public.is_org_staff(org_id UUID)
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+    RETURN EXISTS (
+        SELECT 1 FROM public.organization_users
+        WHERE organization_users.org_id = is_org_staff.org_id
+        AND organization_users.user_id = auth.uid()
+        AND organization_users.is_active = true
+    );
+END;
+$$;
+
+-- Function to get user's org IDs
+CREATE OR REPLACE FUNCTION public.get_user_org_ids()
+RETURNS UUID[]
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+    RETURN ARRAY(
+        SELECT org_id FROM public.organization_users
+        WHERE user_id = auth.uid() AND is_active = true
+    );
+END;
+$$;
+
+-- =====================================================
+-- 5. POLICIES (après fonctions helper)
+-- =====================================================
+
+-- Policies organizations
+DROP POLICY IF EXISTS "Staff can view their org" ON public.organizations;
+CREATE POLICY "Staff can view their org" ON public.organizations
+    FOR SELECT USING (is_org_staff(id));
+
+DROP POLICY IF EXISTS "Owners can update their org" ON public.organizations;
+CREATE POLICY "Owners can update their org" ON public.organizations
+    FOR UPDATE USING (
+        EXISTS (
+            SELECT 1 FROM public.organization_users
+            WHERE organization_users.org_id = organizations.id
+            AND organization_users.user_id = auth.uid()
+            AND organization_users.role = 'owner'
+            AND organization_users.is_active = true
+        )
+    );
+
+DROP POLICY IF EXISTS "Anyone can insert org" ON public.organizations;
+CREATE POLICY "Anyone can insert org" ON public.organizations
+    FOR INSERT WITH CHECK (true);
+
+-- Policies organization_users
+DROP POLICY IF EXISTS "Staff can view their org members" ON public.organization_users;
+CREATE POLICY "Staff can view their org members" ON public.organization_users
+    FOR SELECT USING (is_org_staff(org_id));
+
+DROP POLICY IF EXISTS "Admins can manage org members" ON public.organization_users;
+CREATE POLICY "Admins can manage org members" ON public.organization_users
+    FOR ALL USING (
+        EXISTS (
+            SELECT 1 FROM public.organization_users ou
+            WHERE ou.org_id = organization_users.org_id
+            AND ou.user_id = auth.uid()
+            AND ou.role IN ('owner', 'admin')
+            AND ou.is_active = true
+        )
+    );
+
+DROP POLICY IF EXISTS "Users can insert own org_user" ON public.organization_users;
+CREATE POLICY "Users can insert own org_user" ON public.organization_users
+    FOR INSERT WITH CHECK (user_id = auth.uid());
+
+-- Policies members
 DROP POLICY IF EXISTS "Staff can view their org members" ON public.members;
 CREATE POLICY "Staff can view their org members" ON public.members
     FOR SELECT USING (is_org_staff(org_id));
@@ -257,7 +266,7 @@ CREATE POLICY "Staff can manage their org members" ON public.members
     FOR ALL USING (is_org_staff(org_id));
 
 -- =====================================================
--- 4. UPDATED_AT TRIGGER
+-- 6. UPDATED_AT TRIGGER
 -- =====================================================
 
 CREATE OR REPLACE FUNCTION public.update_updated_at_column()
