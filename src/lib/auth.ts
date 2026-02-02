@@ -62,7 +62,9 @@ export async function requireOrganization() {
 
   const org = await getCurrentOrganization();
   if (!org) {
-    redirect('/login');
+    // Redirect to onboarding instead of login to avoid redirect loop
+    // User is authenticated but has no organization
+    redirect('/onboarding');
   }
 
   return {
@@ -92,7 +94,9 @@ export async function requireMember() {
     .single();
 
   if (error || !member) {
-    redirect('/login');
+    // User is authenticated but not linked to a member
+    // Redirect to a safe page instead of login to avoid redirect loop
+    redirect('/member/not-found');
   }
 
   return {

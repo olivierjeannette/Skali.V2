@@ -38,9 +38,16 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Protected routes
-  const protectedPaths = ['/dashboard', '/member', '/settings'];
+  // Protected routes (require authentication)
+  const protectedPaths = ['/dashboard', '/member', '/settings', '/admin'];
   const isProtectedPath = protectedPaths.some((path) =>
+    request.nextUrl.pathname.startsWith(path)
+  );
+
+  // Safe paths for authenticated users without full setup
+  // These paths should NOT redirect to /dashboard to avoid loops
+  const safePaths = ['/onboarding', '/member/not-found'];
+  const isSafePath = safePaths.some((path) =>
     request.nextUrl.pathname.startsWith(path)
   );
 
@@ -52,12 +59,13 @@ export async function updateSession(request: NextRequest) {
   }
 
   // Redirect logged-in users away from auth pages
+  // BUT not if they're on safe paths (onboarding, etc.)
   const authPaths = ['/login', '/register'];
   const isAuthPath = authPaths.some((path) =>
     request.nextUrl.pathname.startsWith(path)
   );
 
-  if (user && isAuthPath) {
+  if (user && isAuthPath && !isSafePath) {
     const url = request.nextUrl.clone();
     url.pathname = '/dashboard';
     return NextResponse.redirect(url);
