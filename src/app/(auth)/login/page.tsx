@@ -13,6 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { LanguageSwitcher } from '@/components/ui/language-switcher';
+import { Shield } from 'lucide-react';
 
 function LoginForm() {
   const router = useRouter();
@@ -55,9 +56,7 @@ function LoginForm() {
         return;
       }
 
-      // Redirect based on user role - super admin goes to /admin, others to dashboard
-      const destination = result.data?.isSuperAdmin ? '/admin' : redirectTo;
-      router.push(destination);
+      router.push(redirectTo);
       router.refresh();
     } catch {
       setError(tErrors('generic'));
@@ -137,7 +136,13 @@ function LoginForm() {
 export default function LoginPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-muted/50 p-4 relative">
-      <div className="absolute top-4 right-4">
+      <div className="absolute top-4 right-4 flex items-center gap-2">
+        <Link href="/login/admin">
+          <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-destructive">
+            <Shield className="h-4 w-4 mr-1" />
+            Admin
+          </Button>
+        </Link>
         <LanguageSwitcher />
       </div>
       <Suspense fallback={

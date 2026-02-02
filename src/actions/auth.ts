@@ -23,11 +23,6 @@ type ActionResult<T = void> =
   | { success: true; data?: T }
   | { success: false; error: string };
 
-type LoginResult = {
-  isSuperAdmin: boolean;
-  redirectTo: string;
-};
-
 // Helper to generate slug from org name
 function generateSlug(name: string): string {
   return name
@@ -164,7 +159,41 @@ export async function register(formData: FormData): Promise<ActionResult> {
 }
 
 // Login
-export async function login(formData: FormData): Promise<ActionResult<LoginResult>> {
+export async function login(formData: FormData): Promise<ActionResult> {
+  const supabase = await createClient();
+
+  const rawData = {
+    email: formData.get('email') as string,
+    password: formData.get('password') as string,
+  };
+
+  const parsed = loginSchema.safeParse(rawData);
+  if (!parsed.success) {
+    return { success: false, error: 'Email ou mot de passe invalide' };
+  }
+
+  const { email, password } = parsed.data;
+
+  const { error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
+
+  if (error) {
+    if (error.message.includes('Invalid login credentials')) {
+      return { success: false, error: 'Email ou mot de passe incorrect' };
+    }
+    if (error.message.includes('Email not confirmed')) {
+      return { success: false, error: 'Veuillez confirmer votre email avant de vous connecter' };
+    }
+    return { success: false, error: error.message };
+  }
+
+  return { success: true };
+}
+
+// Login for super admin - checks is_super_admin flag
+export async function loginAdmin(formData: FormData): Promise<ActionResult> {
   const supabase = await createClient();
 
   const rawData = {
@@ -188,15 +217,10 @@ export async function login(formData: FormData): Promise<ActionResult<LoginResul
     if (error.message.includes('Invalid login credentials')) {
       return { success: false, error: 'Email ou mot de passe incorrect' };
     }
-    if (error.message.includes('Email not confirmed')) {
-      return { success: false, error: 'Veuillez confirmer votre email avant de vous connecter' };
-    }
     return { success: false, error: error.message };
   }
 
-  // Check if user is super admin
-  // Note: is_super_admin may not be in generated types yet, using raw query
-  let isSuperAdmin = false;
+  // Verify user is super admin
   if (authData.user) {
     const { data: profile } = await supabase
       .from('profiles')
@@ -204,16 +228,16 @@ export async function login(formData: FormData): Promise<ActionResult<LoginResul
       .eq('id', authData.user.id)
       .single();
 
-    isSuperAdmin = (profile as { is_super_admin?: boolean } | null)?.is_super_admin === true;
+    const isSuperAdmin = (profile as { is_super_admin?: boolean } | null)?.is_super_admin === true;
+
+    if (!isSuperAdmin) {
+      // Sign out if not super admin
+      await supabase.auth.signOut();
+      return { success: false, error: 'Accès refusé. Vous n\'êtes pas administrateur.' };
+    }
   }
 
-  return {
-    success: true,
-    data: {
-      isSuperAdmin,
-      redirectTo: isSuperAdmin ? '/admin' : '/dashboard'
-    }
-  };
+  return { success: true };
 }
 
 // Logout
