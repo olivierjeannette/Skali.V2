@@ -23,6 +23,11 @@ type ActionResult<T = void> =
   | { success: true; data?: T }
   | { success: false; error: string };
 
+type LoginResult = {
+  isSuperAdmin: boolean;
+  redirectTo: string;
+};
+
 // Helper to generate slug from org name
 function generateSlug(name: string): string {
   return name
@@ -159,7 +164,7 @@ export async function register(formData: FormData): Promise<ActionResult> {
 }
 
 // Login
-export async function login(formData: FormData): Promise<ActionResult> {
+export async function login(formData: FormData): Promise<ActionResult<LoginResult>> {
   const supabase = await createClient();
 
   const rawData = {
@@ -174,7 +179,7 @@ export async function login(formData: FormData): Promise<ActionResult> {
 
   const { email, password } = parsed.data;
 
-  const { error } = await supabase.auth.signInWithPassword({
+  const { data: authData, error } = await supabase.auth.signInWithPassword({
     email,
     password,
   });
@@ -189,7 +194,25 @@ export async function login(formData: FormData): Promise<ActionResult> {
     return { success: false, error: error.message };
   }
 
-  return { success: true };
+  // Check if user is super admin
+  let isSuperAdmin = false;
+  if (authData.user) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('is_super_admin')
+      .eq('id', authData.user.id)
+      .single();
+
+    isSuperAdmin = profile?.is_super_admin === true;
+  }
+
+  return {
+    success: true,
+    data: {
+      isSuperAdmin,
+      redirectTo: isSuperAdmin ? '/admin' : '/dashboard'
+    }
+  };
 }
 
 // Logout

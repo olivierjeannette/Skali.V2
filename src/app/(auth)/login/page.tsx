@@ -55,7 +55,9 @@ function LoginForm() {
         return;
       }
 
-      router.push(redirectTo);
+      // Redirect based on user role - super admin goes to /admin, others to dashboard
+      const destination = result.data?.isSuperAdmin ? '/admin' : redirectTo;
+      router.push(destination);
       router.refresh();
     } catch {
       setError(tErrors('generic'));
