@@ -8,6 +8,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { triggerWorkflowsByEvent, executeWorkflowById, type TriggerPayload } from '@/lib/workflows';
 
+// Force dynamic rendering (this route uses auth)
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();

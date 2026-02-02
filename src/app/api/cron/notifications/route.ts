@@ -5,6 +5,10 @@ import {
   sendTomorrowClassReminders,
 } from '@/actions/notifications';
 
+// Force dynamic rendering (this route uses headers for auth)
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 // Secret key for cron job authentication
 const CRON_SECRET = process.env.CRON_SECRET;
 

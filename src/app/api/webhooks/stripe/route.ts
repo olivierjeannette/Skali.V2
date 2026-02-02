@@ -3,6 +3,10 @@ import { headers } from 'next/headers';
 import Stripe from 'stripe';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
+// Force dynamic rendering (this route uses headers for webhook signature)
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 // Lazy initialization to avoid build-time errors
 let supabase: SupabaseClient | null = null;
 let stripe: Stripe | null = null;

@@ -7,6 +7,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { headers } from 'next/headers';
+
+// Force dynamic rendering (this route uses headers for auth)
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 import {
   triggerSubscriptionExpiring,
   triggerClassStartingSoon,
