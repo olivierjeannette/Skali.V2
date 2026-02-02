@@ -7,7 +7,7 @@ import type { Organization, OrganizationUser } from '@/types/database.types';
 
 interface OrgUserWithOrg {
   role: OrganizationUser['role'];
-  organization: Organization;
+  organizations: Organization;
 }
 
 export function useAuth() {
@@ -52,14 +52,14 @@ export function useAuth() {
             .from('organization_users')
             .select(`
               role,
-              organization:organizations(*)
+              organizations(*)
             `)
             .eq('user_id', user.id)
             .eq('is_active', true);
 
           if (orgUsers && orgUsers.length > 0) {
             const typedOrgUsers = orgUsers as unknown as OrgUserWithOrg[];
-            const orgs = typedOrgUsers.map((ou) => ou.organization);
+            const orgs = typedOrgUsers.map((ou) => ou.organizations);
             setOrganizations(orgs);
 
             // Set first org as current by default
