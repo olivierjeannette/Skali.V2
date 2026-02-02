@@ -195,9 +195,10 @@ export async function login(formData: FormData): Promise<ActionResult<LoginResul
   }
 
   // Check if user is super admin
+  // Note: Using 'as any' because is_super_admin may not be in generated types yet
   let isSuperAdmin = false;
   if (authData.user) {
-    const { data: profile } = await supabase
+    const { data: profile } = await (supabase as any)
       .from('profiles')
       .select('is_super_admin')
       .eq('id', authData.user.id)
