@@ -18,19 +18,13 @@ export function LandingFooter() {
     company: {
       title: 'Entreprise',
       links: [
-        { label: 'A propos', href: '/about' },
-        { label: 'Blog', href: '/blog' },
-        { label: 'Carrieres', href: '/careers' },
         { label: 'Contact', href: '#contact' },
       ],
     },
     legal: {
       title: 'Legal',
       links: [
-        { label: 'Mentions legales', href: '/legal' },
-        { label: 'CGU', href: '/cgu' },
-        { label: 'Confidentialite', href: '/privacy' },
-        { label: 'Cookies', href: '/cookies' },
+        { label: 'Connexion', href: '/login' },
       ],
     },
   };
