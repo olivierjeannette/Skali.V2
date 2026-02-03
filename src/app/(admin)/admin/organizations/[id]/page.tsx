@@ -133,8 +133,14 @@ export default async function OrganizationDetailPage({
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Info Card */}
         <Card className="lg:col-span-2">
-          <CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Informations</CardTitle>
+            <Link
+              href={`/admin/organizations/${params.id}/staff`}
+              className="text-sm text-orange-500 hover:text-orange-600"
+            >
+              Gerer le staff →
+            </Link>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-4">

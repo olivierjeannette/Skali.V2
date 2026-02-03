@@ -54,7 +54,7 @@ export default async function AdminLayout({
             </div>
 
             {/* Nav */}
-            <nav className="hidden md:flex items-center gap-6">
+            <nav className="hidden md:flex items-center gap-4 text-sm">
               <Link
                 href="/admin"
                 className="text-gray-300 hover:text-white transition"
@@ -68,10 +68,22 @@ export default async function AdminLayout({
                 Organisations
               </Link>
               <Link
-                href="/admin/members"
+                href="/admin/users"
                 className="text-gray-300 hover:text-white transition"
               >
-                Membres globaux
+                Utilisateurs
+              </Link>
+              <Link
+                href="/admin/billing"
+                className="text-gray-300 hover:text-white transition"
+              >
+                Facturation
+              </Link>
+              <Link
+                href="/admin/analytics"
+                className="text-gray-300 hover:text-white transition"
+              >
+                Analytics
               </Link>
               <Link
                 href="/admin/plans"
@@ -80,10 +92,22 @@ export default async function AdminLayout({
                 Plans
               </Link>
               <Link
+                href="/admin/coupons"
+                className="text-gray-300 hover:text-white transition"
+              >
+                Coupons
+              </Link>
+              <Link
                 href="/admin/audit"
                 className="text-gray-300 hover:text-white transition"
               >
                 Audit
+              </Link>
+              <Link
+                href="/admin/settings"
+                className="text-gray-300 hover:text-white transition"
+              >
+                Config
               </Link>
             </nav>
 

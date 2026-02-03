@@ -536,7 +536,7 @@ export async function inviteOwner(
 
   // Send invitation email via Resend
   const { sendOwnerInvitationEmail } = await import('./billing');
-  await sendOwnerInvitationEmail(
+  const emailResult = await sendOwnerInvitationEmail(
     invitation.token,
     input.email,
     orgDetails?.name || 'Votre salle',
@@ -545,6 +545,13 @@ export async function inviteOwner(
     invitation.expires_at,
     plan?.name
   );
+
+  if (!emailResult.success) {
+    console.warn('[Platform] Email sending failed but invitation created:', emailResult.error);
+    // On ne fail pas l'invitation si l'email échoue, mais on log l'erreur
+  } else {
+    console.log('[Platform] Owner invitation email sent, messageId:', emailResult.data?.messageId);
+  }
 
   revalidatePath(`/admin/organizations/${input.org_id}`);
   return { success: true, invitationId: invitation.id };

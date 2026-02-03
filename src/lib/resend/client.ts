@@ -15,8 +15,9 @@ export function getResendClient(): Resend {
 }
 
 export const emailConfig = {
-  from: process.env.EMAIL_FROM || 'Skali Prog <noreply@skaliprog.com>',
-  replyTo: 'support@skaliprog.com',
+  // Domaine vérifié sur Resend: laskali.eu
+  from: process.env.EMAIL_FROM || 'Skali Prog <noreply@laskali.eu>',
+  replyTo: process.env.EMAIL_REPLY_TO || 'support@laskali.eu',
 };
 
 // Helper to check if email is configured

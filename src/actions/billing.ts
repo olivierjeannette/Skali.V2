@@ -791,12 +791,19 @@ export async function sendOwnerInvitationEmail(
   planName?: string
 ): Promise<ActionResult<{ messageId: string }>> {
   if (!isEmailConfigured()) {
-    console.warn('Email not configured, skipping invitation email');
-    return { success: true, data: { messageId: 'skipped' } };
+    console.warn('[Email] RESEND_API_KEY not configured, skipping invitation email');
+    return { success: true, data: { messageId: 'skipped-no-config' } };
   }
 
   const resend = getResendClient();
   const acceptUrl = `${APP_URL}/invite/accept?token=${invitationToken}`;
+
+  console.log('[Email] Sending owner invitation email:', {
+    to: recipientEmail,
+    from: emailConfig.from,
+    organization: organizationName,
+    acceptUrl,
+  });
 
   try {
     const { data, error } = await resend.emails.send({
@@ -815,13 +822,18 @@ export async function sendOwnerInvitationEmail(
     });
 
     if (error) {
-      console.error('Error sending invitation email:', error);
+      console.error('[Email] Resend API error:', error);
       return { success: false, error: error.message };
     }
 
+    console.log('[Email] Invitation email sent successfully:', {
+      messageId: data?.id,
+      to: recipientEmail,
+    });
+
     return { success: true, data: { messageId: data?.id || '' } };
   } catch (error) {
-    console.error('Error sending invitation email:', error);
+    console.error('[Email] Exception sending invitation email:', error);
     return { success: false, error: 'Erreur lors de l\'envoi de l\'email' };
   }
 }
