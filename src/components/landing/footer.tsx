@@ -9,22 +9,27 @@ export function LandingFooter() {
     product: {
       title: 'Produit',
       links: [
-        { label: 'Fonctionnalites', href: '#features' },
-        { label: 'Tarifs', href: '#pricing' },
-        { label: 'Demo', href: '#demo' },
-        { label: 'FAQ', href: '#faq' },
+        { label: 'Fonctionnalites', href: '/#features' },
+        { label: 'Tarifs', href: '/#pricing' },
+        { label: 'Demo', href: '/#demo' },
+        { label: 'FAQ', href: '/#faq' },
       ],
     },
     company: {
       title: 'Entreprise',
       links: [
-        { label: 'Contact', href: '#contact' },
+        { label: 'A propos', href: '/about' },
+        { label: 'Contact', href: '/#contact' },
+        { label: 'Connexion', href: '/login' },
       ],
     },
     legal: {
       title: 'Legal',
       links: [
-        { label: 'Connexion', href: '/login' },
+        { label: 'Mentions legales', href: '/legal' },
+        { label: 'CGU', href: '/cgu' },
+        { label: 'Confidentialite', href: '/privacy' },
+        { label: 'Cookies', href: '/cookies' },
       ],
     },
   };
